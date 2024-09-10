@@ -1,24 +1,104 @@
-# chai aur backend  series 
 
-This is a video series on backend with javascript
-- [Model link](https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj?origin=share)
 
-- [Video playlist](https://www.youtube.com/watch?v=EH3vGeqeIAo&list=PLu71SKxNbfoBGh_8p_NS-ZAh6v7HhYqHW)
+# YouTube + Twitter Backend 
 
----
-# Summary of this project
+## Introduction
 
-This project is a complex backend project that is built with nodejs, expressjs, mongodb, mongoose, jwt, bcrypt, and many more. This project is a complete backend project that has all the features that a backend project should have.
-We are building a complete video hosting website similar to youtube with all the features like login, signup, upload video, like, dislike, comment, reply, subscribe, unsubscribe, and many more.
+This is a ``YOUTUBE + TWITTER`` backend project that covers allmost the functionalities of youtube 
+and also combines the tweet functionality from twitter into it. Find more about his project in the documentaion below.
 
-Project uses all standard practices like JWT, bcrypt, access tokens, refresh Tokens and many more. We have spent a lot of time in building this project and we are sure that you will learn a lot from this project.
+## Important links
 
----
-Top Contributer to complete all TODOs
+| Content            | Link                                                                        |
+| -------------------| ----------------------------------------------------------------------------|
+| API Documentation  | [click here](https://documenter.getpostman.com/view/28570926/2s9YsNdVwW)    |
+| Model              | [click here ](https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj)         |
 
-1. Spiderman (just sample)  [Link to Repo](https://www.youtube.com/@chaiaurcode)
+## Features
 
---- 
-## How to contribute in this open source Project
+### User Management:
 
-First, please understand that this is not your regular project to merge your PR. This repo requires you to finish all assignments that are in controller folder. We don't accept half work, please finish all controllers and then reach us out on [Discord](https://hitesh.ai/discord) or [Twitter](https://twitter.com/@hiteshdotcom) and after checking your repo, I will add link to your repo in this readme.
+- Registration, login, logout, password reset
+- Profile management (avatar, cover image, details)
+- Watch history tracking
+
+### Video Management:
+
+- Video upload and publishing
+- Video search, sorting, and pagination
+- Video editing and deletion
+- Visibility control (publish/unpublish)
+
+### Tweet Management:
+
+- Tweet creation and publishing
+- Viewing user tweets
+- Updating and deleting tweets
+
+### Subscription Management:
+
+- Subscribing to channels
+- Viewing subscriber and subscribed channel lists
+
+### Playlist Management:
+
+- Creating, updating, and deleting playlists
+- Adding and removing videos from playlists
+- Viewing user playlists
+
+### Like Management:
+
+- Liking and unliking videos, comments, and tweets
+- Viewing liked videos
+
+### Comment Management:
+
+- Adding, updating, and deleting comments on videos
+
+### Dashboard:
+
+- Viewing channel statistics (views, subscribers, videos, likes)
+- Accessing uploaded videos
+
+### Health Check:
+
+- Endpoint to verify the backend's health
+
+## Technologies Used
+
+- Node.js 
+- Express.js
+- MongoDB
+- Cloudinary (must have an account)
+
+## Installation and Setup
+
+1. **Clone the repository:**
+
+    ```bash
+    git clone https://github.com/
+    ```
+
+2. **Install dependencies:**
+
+    ```bash
+    cd youtube-twitter
+    npm install
+    ```
+
+3. **Set up environment variables:**
+    Create a .env in root of project and fill in the required values in the .env file using .env.sample file
+
+4. **Start the server:**
+
+    ```bash
+    npm run dev
+    ```
+
+## Contributing
+
+If you wish to contribute to this project, please feel free to contribute.
+
+## License
+
+This project is licensed under [ChaiAurCode](https://www.youtube.com/@chaiaurcode).
