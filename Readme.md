@@ -4,7 +4,7 @@
 
 ## Introduction
 
-This is a ``YOUTUBE + TWITTER`` backend project that covers allmost the functionalities of youtube 
+This is a ``YOUTUBE + X`` backend project that covers allmost the functionalities of youtube 
 and also combines the tweet functionality from twitter into it. Find more about his project in the documentaion below.
 
 ## Important links
@@ -76,13 +76,13 @@ and also combines the tweet functionality from twitter into it. Find more about 
 1. **Clone the repository:**
 
     ```bash
-    git clone https://github.com/
+    git clone [https://github.com/](https://github.com/eNVy047/youtube-x.git)
     ```
 
 2. **Install dependencies:**
 
     ```bash
-    cd youtube-twitter
+    cd youtube-x
     npm install
     ```
 
