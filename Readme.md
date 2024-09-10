@@ -76,7 +76,7 @@ and also combines the tweet functionality from twitter into it. Find more about 
 1. **Clone the repository:**
 
     ```bash
-    git clone https://github.com/](https://github.com/eNVy047/youtube-x.git
+    git clone https://github.com/eNVy047/youtube-x.git
     ```
 
 2. **Install dependencies:**
