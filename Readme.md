@@ -1,101 +1,131 @@
+# YouTube + X Backend 🎬🐦
+
+Welcome to the **YouTube + X** Backend — a full-featured server-side application that brings together the power of **YouTube** and **Twitter**, combining video content management with tweet-style microblogging. This project is built using **Node.js**, **Express**, and **MongoDB**, with rich functionality to support a dynamic media platform.
 
 
-# YouTube + X Backend 
+<p align="center">
+  <a href="https://www.buymeacoffee.com/narayanverma" target="_blank">
+    <img src="https://img.shields.io/badge/-Buy%20me%20a%20coffee-FFDD00?logo=buy-me-a-coffee&logoColor=black&style=for-the-badge" alt="Buy Me A Coffee" />
+  </a>
+</p>
 
-## Introduction
 
-This is a ``YOUTUBE + X`` backend project that covers allmost the functionalities of youtube 
-and also combines the tweet functionality from twitter into it. Find more about his project in the documentaion below.
 
-## Important links
+---
 
-| Content            | Link                                                                        |
-| -------------------| ----------------------------------------------------------------------------|
-| API Documentation  | [click here](https://documenter.getpostman.com/view/28570926/2s9YsNdVwW)    |
-| Model              | [click here ](https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj)         |
+## 📌 Overview
+This project allows users to:
+- Upload and manage videos
+- Tweet and interact like on Twitter
+- Subscribe to channels
+- Create and manage playlists
+- Like and comment on content
+- Access comprehensive dashboard analytics
 
-## Features
+🔗 **API Documentation**: [View on Postman](https://documenter.getpostman.com/view/28570926/2s9YsNdVwW)  
+🧠 **Model Reference**: [View on Eraser](https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj)
 
-### User Management:
+---
 
-- Registration, login, logout, password reset
-- Profile management (avatar, cover image, details)
-- Watch history tracking
+## ⚙️ Features
 
-### Video Management:
+### 👤 User Management
+- User registration, login, logout
+- Password reset functionality
+- Avatar & cover image uploads
+- Profile update and watch history
 
-- Video upload and publishing
-- Video search, sorting, and pagination
-- Video editing and deletion
-- Visibility control (publish/unpublish)
+### 📹 Video Management
+- Upload, publish/unpublish, edit, and delete videos
+- Video discovery with search, sort, and pagination
 
-### Tweet Management:
+### 🐦 Tweet Management
+- Post, edit, and delete tweets
+- View personal and public tweets
 
-- Tweet creation and publishing
-- Viewing user tweets
-- Updating and deleting tweets
+### 🔔 Subscription System
+- Subscribe/unsubscribe to/from channels
+- View followers and following channels
 
-### Subscription Management:
+### 📁 Playlist Management
+- Create, edit, delete playlists
+- Add/remove videos from playlists
+- View all user playlists
 
-- Subscribing to channels
-- Viewing subscriber and subscribed channel lists
+### ❤️ Like Management
+- Like/unlike videos, tweets, and comments
+- View all liked content
 
-### Playlist Management:
+### 💬 Commenting System
+- Add, update, and delete comments on videos
 
-- Creating, updating, and deleting playlists
-- Adding and removing videos from playlists
-- Viewing user playlists
+### 📊 Dashboard
+- Overview of uploaded videos, views, likes, subscribers
 
-### Like Management:
+### 🩺 Health Check
+- Simple endpoint to verify backend health and uptime
 
-- Liking and unliking videos, comments, and tweets
-- Viewing liked videos
+---
 
-### Comment Management:
+## 🛠️ Tech Stack
+- **Node.js** (JavaScript runtime)
+- **Express.js** (Backend web framework)
+- **MongoDB** (Database)
+- **Cloudinary** (Media upload and storage)
 
-- Adding, updating, and deleting comments on videos
+---
 
-### Dashboard:
+## 🚀 Getting Started
 
-- Viewing channel statistics (views, subscribers, videos, likes)
-- Accessing uploaded videos
+### 1️⃣ Clone the Repository:
+```bash
+git clone https://github.com/eNVy047/youtube-x.git
+cd youtube-x
+```
 
-### Health Check:
+### 2️⃣ Install Dependencies:
+```bash
+npm install
+```
 
-- Endpoint to verify the backend's health
+### 3️⃣ Configure Environment:
+- Create a `.env` file in the root
+- Refer to `.env.sample` and add your environment variables
 
-## Technologies Used
+### 4️⃣ Run the Development Server:
+```bash
+npm run dev
+```
 
-- Node.js 
-- Express.js
-- MongoDB
-- Cloudinary (must have an account)
+---
 
-## Installation and Setup
+## 🤝 Contributing
+We welcome contributions of all kinds. If you have suggestions, ideas, or bug reports — feel free to open an issue or pull request.
 
-1. **Clone the repository:**
+---
 
-    ```bash
-    git clone https://github.com/eNVy047/youtube-x.git
-    ```
+## 🌍 Socials & Support
+<p align="left">
+  <a href="mailto:narayan7154@gmail.com">
+    <img align="center" src="https://img.shields.io/badge/-Email-D14836?logo=gmail&logoColor=white&style=flat" />
+  </a>
+  <a href="https://www.linkedin.com/in/narayanverma/" target="_blank">
+    <img align="center" src="https://img.shields.io/badge/-LinkedIn-0077B5?logo=linkedin&style=flat" />
+  </a>
+  <a href="https://www.instagram.com/narayan_.v/" target="_blank">
+    <img align="center" src="https://img.shields.io/badge/-Instagram-E4405F?logo=instagram&logoColor=white&style=flat" />
+  </a>
+  <a href="https://narayanverma.vercel.app" target="_blank">
+    <img align="center" src="https://img.shields.io/badge/-Portfolio-24292E?logo=githubpages&style=flat" />
+  </a>
+</p>
 
-2. **Install dependencies:**
+### ☕ Support Me
 
-    ```bash
-    cd youtube-x
-    npm install
-    ```
+If you like my work and want to support me, you can buy me a coffee!  
+[![Buy Me a Coffee](https://img.shields.io/badge/-Buy%20me%20a%20coffee-FFDD00?logo=buy-me-a-coffee&logoColor=black&style=flat)](https://www.buymeacoffee.com/narayanverma)
 
-3. **Set up environment variables:**
-    Create a .env in root of project and fill in the required values in the .env file using .env.sample file
+---
 
-4. **Start the server:**
-
-    ```bash
-    npm run dev
-    ```
-
-## Contributing
-
-If you wish to contribute to this project, please feel free to contribute.
+> "Where YouTube meets Twitter, powered by full-stack engineering." 🚀
 
