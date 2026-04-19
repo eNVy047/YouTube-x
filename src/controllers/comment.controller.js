@@ -1,5 +1,7 @@
 import mongoose from "mongoose"
 import {Comment} from "../models/comment.model.js"
+import {Video} from "../models/video.model.js"
+import {Like} from "../models/like.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
@@ -67,16 +69,16 @@ const getVideoComments = asyncHandler(async (req, res) => {
                 owner: {
                     username: 1,
                     fullName: 1,
-                    "avatar.url": 1
+                    avatar: 1
                 },
                 isLiked: 1
             }
         }
     ]);
 
-    const option ={
+    const options ={
         page: parseInt(page , 10),
-        limit: parseInt(page, 10)
+        limit: parseInt(limit, 10)
     };
 
     const comments = await Comment.aggregatePaginate(
@@ -100,25 +102,29 @@ const addComment = asyncHandler(async (req, res) => {
         throw new ApiError(400, "content is required")
     }
 
-    const video = Video.findById(videoId);
+    const video = await Video.findById(videoId);
 
     if(!video){
         throw new ApiError(404, "vedio is not found.")
     }
 
-    const comment = Comment.create({
+    const comment = await Comment.create({
         content,
         video : videoId,
-        user : req.user?._id
+        owner : req.user?._id
     });
 
     if(!comment){
         throw new ApiError(500,"Failed to add comment .Please try again!")
     }
 
+    const hydratedComment = await Comment.findById(comment._id)
+        .populate("owner", "username fullName avatar")
+        .lean();
+
     return res
     .status(201)
-    .json(new ApiResponse(201, comment, "comment added sucessfully."));
+    .json(new ApiResponse(201, hydratedComment ?? comment, "comment added sucessfully."));
 })
 
 const updateComment = asyncHandler(async (req, res) => {
@@ -165,24 +171,24 @@ const deleteComment = asyncHandler(async (req, res) => {
 
     const comment = await Comment.findById(commentId);
 
-    if(!commentId){
+    if(!comment){
         throw new ApiError(404, "comment not found.")
     }
 
     if (comment?.owner.toString() !== req.user?._id.toString()) {
-        throw new ApiError(400, "only comment owner can delete their comment");
+        throw new ApiError(403, "only comment owner can delete their comment");
     }
 
     await Comment.findByIdAndDelete(commentId);
 
+    // Also cleanup likes
     await Like.deleteMany({
-        comment: commentId,
-        likedBy: req.user
+        comment: commentId
     });
 
     return res
     .status(200)
-    .json(200,{ commentId },"comment delete succesfully.")
+    .json(new ApiResponse(200, { commentId }, "comment deleted successfully"));
 });
 
 export {

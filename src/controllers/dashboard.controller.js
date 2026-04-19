@@ -66,7 +66,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
     ]);
 
     const channelStats = {
-        totalSubscribers: totalSubscribers[0]?.subscribersCount || 0,
+        totalSubscribers: totalSubscribers[0]?.subscriberCount || 0,
         totalLikes: video[0]?.totalLikes || 0,
         totalViews: video[0]?.totalViews || 0,
         totalVideos: video[0]?.totalVideos || 0
@@ -119,8 +119,8 @@ const getChannelVideos = asyncHandler(async (req, res) => {
         {
             $project: {
                 _id: 1,
-                "videoFile.url": 1,
-                "thumbnail.url": 1,
+                videoFile: 1,
+                thumbnail: 1,
                 title: 1,
                 description: 1,
                 createdAt: {

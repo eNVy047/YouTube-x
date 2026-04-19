@@ -1,64 +1,115 @@
 import mongoose, {isValidObjectId} from "mongoose"
 import {Video} from "../models/video.model.js"
 import {User} from "../models/user.model.js"
+import {Like} from "../models/like.model.js"
+import {Comment} from "../models/comment.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 
 
-const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
-    //TODO: get all videos based on query, sort, pagination
-    
-    console.log(userId);
-    const pipeline = [];
+const categoryKeywords = {
+    all: [],
+    music: ["music", "song", "album", "playlist", "audio"],
+    gaming: ["gaming", "game", "playthrough", "fps", "walkthrough"],
+    tech: ["tech", "developer", "coding", "programming", "ai", "software"],
+    design: ["design", "ui", "ux", "motion", "branding"],
+    news: ["news", "update", "breaking", "headline", "daily"],
+    education: ["tutorial", "lesson", "course", "education", "guide", "learn"],
+    sports: ["sports", "match", "highlights", "football", "cricket", "nba"],
+    food: ["food", "cooking", "recipe", "meal", "chef"],
+    lifestyle: ["vlog", "lifestyle", "daily", "routine", "personal"],
+}
 
-    // for using Full Text based search u need to create a search index in mongoDB atlas
-    // you can include field mapppings in search index eg.title, description, as well
-    // Field mappings specify which fields within your documents should be indexed for text search.
-    // this helps in seraching only in title, desc providing faster search results
-    // here the name of search index is 'search-videos'
-    if (query) {
-        pipeline.push({
-            $search: {
-                index: "search-videos",
-                text: {
-                    query: query,
-                    path: ["title", "description"] //search only on title, desc
-                }
-            }
-        });
+const escapeRegExp = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
+const buildKeywordMatch = (input) => {
+    if (!input || input === "all") {
+        return null
     }
 
-    if (userId) {
-        if (!isValidObjectId(userId)) {
-            throw new ApiError(400, "Invalid userId");
-        }
+    const normalized = input.toLowerCase()
+    const keywords = categoryKeywords[normalized] || []
 
-        pipeline.push({
-            $match: {
-                owner: new mongoose.Types.ObjectId(userId)
-            }
-        });
+    // Priority 1: Match the explicit category field directly (case-insensitive)
+    // Priority 2: Fallback to keyword matching in title/description
+    const keywordMatches = keywords.flatMap((keyword) => [
+        { title: new RegExp(escapeRegExp(keyword), "i") },
+        { description: new RegExp(escapeRegExp(keyword), "i") },
+        { tags: new RegExp(escapeRegExp(keyword), "i") }
+    ])
+
+    return {
+        $or: [
+            { category: new RegExp(`^${escapeRegExp(input)}$`, "i") },
+            ...keywordMatches
+        ],
+    }
+}
+
+const buildVideoPipeline = ({
+    query,
+    category,
+    excludeVideoId,
+    sortBy = "createdAt",
+    sortType = "desc",
+}) => {
+    const pipeline = []
+    const matchConditions = [{ isPublished: true }]
+
+    if (excludeVideoId && isValidObjectId(excludeVideoId)) {
+        matchConditions.push({
+            _id: { $ne: new mongoose.Types.ObjectId(excludeVideoId) },
+        })
     }
 
-    // fetch videos only that are set isPublished as true
-    pipeline.push({ $match: { isPublished: true } });
-
-    //sortBy can be views, createdAt, duration
-     //sortType can be ascending(-1) or descending(1)
-     if (sortBy && sortType) {
-        pipeline.push({
-            $sort: {
-                [sortBy]: sortType === "asc" ? 1 : -1
-            }
-        });
-    } else {
-        pipeline.push({ $sort: { createdAt: -1 } });
+    if (query?.trim()) {
+        const searchRegex = new RegExp(escapeRegExp(query.trim()), "i")
+        matchConditions.push({
+            $or: [
+                { title: searchRegex },
+                { description: searchRegex },
+                { tags: searchRegex },
+                { category: searchRegex },
+            ],
+        })
     }
+
+    const categoryMatch = buildKeywordMatch(category)
+    if (categoryMatch) {
+        matchConditions.push(categoryMatch)
+    }
+
+    pipeline.push({
+        $match:
+            matchConditions.length === 1 ? matchConditions[0] : { $and: matchConditions },
+    })
+
+    pipeline.push({
+        $sort: {
+            [sortBy]: sortType === "asc" ? 1 : -1,
+            createdAt: -1,
+        },
+    })
 
     pipeline.push(
+        {
+            $lookup: {
+                from: "likes",
+                localField: "_id",
+                foreignField: "video",
+                as: "likes",
+            },
+        },
+        {
+            $lookup: {
+                from: "comments",
+                localField: "_id",
+                foreignField: "video",
+                as: "comments",
+            },
+        },
         {
             $lookup: {
                 from: "users",
@@ -69,16 +120,55 @@ const getAllVideos = asyncHandler(async (req, res) => {
                     {
                         $project: {
                             username: 1,
-                            "avatar.url": 1
-                        }
-                    }
-                ]
-            }
+                            fullName: 1,
+                            avatar: 1,
+                        },
+                    },
+                ],
+            },
         },
         {
-            $unwind: "$ownerDetails"
+            $unwind: "$ownerDetails",
+        },
+        {
+            $addFields: {
+                likesCount: { $size: "$likes" },
+                commentsCount: { $size: "$comments" },
+            },
+        },
+        {
+            $project: {
+                likes: 0,
+                comments: 0,
+            },
         }
     )
+
+    return pipeline
+}
+
+
+const getAllVideos = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 10, query, sortBy, sortType, category, userId } = req.query
+
+    const pipeline = buildVideoPipeline({
+        query,
+        category,
+        sortBy: sortBy || "createdAt",
+        sortType: sortType || "desc",
+    })
+
+    if (userId) {
+        if (!isValidObjectId(userId)) {
+            throw new ApiError(400, "Invalid userId");
+        }
+
+        pipeline.unshift({
+            $match: {
+                owner: new mongoose.Types.ObjectId(userId)
+            }
+        })
+    }
 
     const videoAggregate = Video.aggregate(pipeline);
     const options = {
@@ -93,58 +183,93 @@ const getAllVideos = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, video, "Videos fetched successfully"));
 });
 
+const getRecommendedVideos = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 8, query, category, isLive, seedVideoId } = req.query
+
+    const pipeline = buildVideoPipeline({
+        query,
+        category,
+        isLive,
+        excludeVideoId: seedVideoId,
+        sortBy: "views",
+        sortType: "desc",
+    })
+
+    const videoAggregate = Video.aggregate(pipeline)
+    const options = {
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+    }
+
+    const videos = await Video.aggregatePaginate(videoAggregate, options)
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, videos, "Recommended videos fetched successfully"))
+})
+
 
 const publishAVideo = asyncHandler(async (req, res) => {
-    const { title, description} = req.body
-    // TODO: get video, upload to cloudinary, create video
+    const { title, description, category, tags, visibility, isForKids } = req.body
     
-    
-    if ([title, description].some((field) => field?.trim() === "")) {
-        throw new ApiError(400, "All fields are required");
+    if ([title, description, category].some((field) => field?.trim() === "")) {
+        throw new ApiError(400, "Title, description and category are required");
     }
 
     const videoFileLocalPath = req.files?.videoFile[0].path;
     const thumbnailLocalPath = req.files?.thumbnail[0].path;
 
     if (!videoFileLocalPath) {
-        throw new ApiError(400, "videoFileLocalPath is required");
+        throw new ApiError(400, "Video file is required");
     }
 
     if (!thumbnailLocalPath) {
-        throw new ApiError(400, "thumbnailLocalPath is required");
+        throw new ApiError(400, "Thumbnail is required");
     }
 
     const videoFile = await uploadOnCloudinary(videoFileLocalPath);
     const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
 
     if (!videoFile) {
-        throw new ApiError(400, "Video file not found");
+        throw new ApiError(400, "Video upload failed");
     }
 
     if (!thumbnail) {
-        throw new ApiError(400, "Thumbnail not found");
+        throw new ApiError(400, "Thumbnail upload failed");
+    }
+
+    // Process tags: support both array and comma-separated string
+    let parsedTags = [];
+    if (tags) {
+        parsedTags = Array.isArray(tags) 
+            ? tags 
+            : tags.split(",").map(tag => tag.trim()).filter(tag => tag !== "");
     }
 
     const video = await Video.create({
         title,
         description,
-        duration: videoFile.duration,
-        videoFile: {
-            url: videoFile.url,
-            public_id: videoFile.public_id
-        },
-        thumbnail: {
-            url: thumbnail.url,
-            public_id: thumbnail.public_id
-        },
+        category,
+        tags: parsedTags,
+        visibility: visibility || "public",
+        isForKids: isForKids === "true" || isForKids === true,
+        duration: videoFile.duration || 0,
+        videoFile: videoFile.secure_url || videoFile.url,
+        thumbnail: thumbnail.secure_url || thumbnail.url,
         owner: req.user?._id,
-        isPublished: false
+        isPublished: true
+    });
+
+    console.log("Video record established in database:", {
+        id: video._id,
+        title: video.title,
+        url: video.videoFile
     });
 
     const videoUploaded = await Video.findById(video._id);
 
     if (!videoUploaded) {
-        throw new ApiError(500, "videoUpload failed please try again !!!");
+        throw new ApiError(500, "Video record creation failed");
     }
 
     return res
@@ -161,9 +286,9 @@ const getVideoById = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid videoId");
     }
 
-    if (!isValidObjectId(req.user?._id)) {
-        throw new ApiError(400, "Invalid userId");
-    }
+    const currentUserId = req.user?._id && isValidObjectId(req.user._id)
+        ? new mongoose.Types.ObjectId(req.user._id)
+        : null
 
     const video = await Video.aggregate([
         {
@@ -200,23 +325,25 @@ const getVideoById = asyncHandler(async (req, res) => {
                                 $size: "$subscribers"
                             },
                             isSubscribed: {
-                                $cond: {
-                                    if: {
-                                        $in: [
-                                            req.user?._id,
-                                            "$subscribers.subscriber"
-                                        ]
-                                    },
-                                    then: true,
-                                    else: false
-                                }
+                                $cond: currentUserId
+                                    ? {
+                                        if: {
+                                            $in: [
+                                                currentUserId,
+                                                "$subscribers.subscriber"
+                                            ]
+                                        },
+                                        then: true,
+                                        else: false
+                                    }
+                                    : false
                             }
                         }
                     },
                     {
                         $project: {
                             username: 1,
-                            "avatar.url": 1,
+                            avatar: 1,
                             subscribersCount: 1,
                             isSubscribed: 1
                         }
@@ -233,17 +360,20 @@ const getVideoById = asyncHandler(async (req, res) => {
                     $first: "$owner"
                 },
                 isLiked: {
-                    $cond: {
-                        if: {$in: [req.user?._id, "$likes.likedBy"]},
-                        then: true,
-                        else: false
-                    }
+                    $cond: currentUserId
+                        ? {
+                            if: {$in: [currentUserId, "$likes.likedBy"]},
+                            then: true,
+                            else: false
+                        }
+                        : false
                 }
             }
         },
         {
             $project: {
-                "videoFile.url": 1,
+                videoFile: 1,
+                thumbnail: 1,
                 title: 1,
                 description: 1,
                 views: 1,
@@ -256,23 +386,25 @@ const getVideoById = asyncHandler(async (req, res) => {
             }
         }
     ]);
-    if (!video) {
+    if (!video?.length) {
         throw new ApiError(500, "failed to fetch video");
     }
 
-    // increment views if video fetched successfully
-    await Video.findByIdAndUpdate(videoId, {
-        $inc: {
-            views: 1
-        }
-    });
+    if (currentUserId) {
+        // increment views if video fetched successfully
+        await Video.findByIdAndUpdate(videoId, {
+            $inc: {
+                views: 1
+            }
+        });
 
-    // add this video to user watch history
-    await User.findByIdAndUpdate(req.user?._id, {
-        $addToSet: {
-            watchHistory: videoId
-        }
-    });
+        // add this video to user watch history
+        await User.findByIdAndUpdate(currentUserId, {
+            $addToSet: {
+                watchHistory: videoId
+            }
+        });
+    }
 
     return res
         .status(200)
@@ -445,6 +577,7 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 
 export {
     getAllVideos,
+    getRecommendedVideos,
     publishAVideo,
     getVideoById,
     updateVideo,

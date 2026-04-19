@@ -31,6 +31,28 @@ const videoSchema = new Schema(
             type: Boolean,
             default: true
         },
+        visibility: {
+            type: String,
+            enum: ["public", "private", "unlisted"],
+            default: "public"
+        },
+        category: {
+            type: String,
+            required: true
+        },
+        tags: [
+            {
+                type: String
+            }
+        ],
+        isForKids: {
+            type: Boolean,
+            default: false
+        },
+        isLive: {
+            type: Boolean,
+            default: false
+        },
         owner: {
             type: Schema.Types.ObjectId,
             ref: "User"

@@ -35,6 +35,10 @@ const getUserTweets = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid userId");
     }
 
+    // Audit Discovery: Check if raw tweets exist for this userId before projection
+    const rawCheck = await Tweet.find({ owner: userId }).limit(1);
+    console.log(`[Diagnostic] Direct findOne check for owner ${userId}:`, rawCheck.length > 0 ? "Found" : "Not Found");
+
     const tweets = await Tweet.aggregate([
         {
             $match: {
@@ -51,7 +55,8 @@ const getUserTweets = asyncHandler(async (req, res) => {
                     {
                         $project: {
                             username: 1,
-                            "avatar.url": 1,
+                            fullName: 1,
+                            avatar: 1,
                         },
                     },
                 ],
@@ -82,7 +87,10 @@ const getUserTweets = asyncHandler(async (req, res) => {
                 },
                 isLiked: {
                     $cond: {
-                        if: {$in: [req.user?._id, "$likeDetails.likedBy"]},
+                        if: { $and: [
+                            { $ne: [req.user?._id, undefined] },
+                            { $in: [new mongoose.Types.ObjectId(req.user?._id), "$likeDetails.likedBy"] }
+                        ]},
                         then: true,
                         else: false
                     }
@@ -108,6 +116,85 @@ const getUserTweets = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(new ApiResponse(200, tweets, "Tweets fetched successfully"));
+});
+
+const getAllTweets = asyncHandler(async (req, res) => {
+    // Get all tweets for the global feed
+    const tweets = await Tweet.aggregate([
+        {
+            $sort: {
+                createdAt: -1
+            }
+        },
+        {
+            $limit: 50
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "ownerDetails",
+                pipeline: [
+                    {
+                        $project: {
+                            username: 1,
+                            fullName: 1,
+                            avatar: 1,
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            $lookup: {
+                from: "likes",
+                localField: "_id",
+                foreignField: "tweet",
+                as: "likeDetails",
+                pipeline: [
+                    {
+                        $project: {
+                            likedBy: 1,
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            $addFields: {
+                likesCount: {
+                    $size: "$likeDetails",
+                },
+                ownerDetails: {
+                    $first: "$ownerDetails",
+                },
+                isLiked: {
+                    $cond: {
+                        if: { $and: [
+                            { $ne: [req.user?._id, undefined] },
+                            { $in: [new mongoose.Types.ObjectId(req.user?._id), "$likeDetails.likedBy"] }
+                        ]},
+                        then: true,
+                        else: false
+                    }
+                }
+            },
+        },
+        {
+            $project: {
+                content: 1,
+                ownerDetails: 1,
+                likesCount: 1,
+                createdAt: 1,
+                isLiked: 1
+            },
+        },
+    ]);
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, tweets, "Global tweets fetched successfully"));
 });
 
 const updateTweet = asyncHandler(async (req, res) => {
@@ -152,16 +239,21 @@ const updateTweet = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, newTweet,"Tweet edit Succesfully."))
 })
 
+
 const deleteTweet = asyncHandler(async (req, res) => {
     //TODO: delete tweet
     const { tweetId } = req.params;
-
     if(!isValidObjectId(tweetId)){
-        throw new ApiError(401,"Tweet  not found")
+        throw new ApiError(400, "Invalid tweet Id")
     }
 
-    if (tweet?.owner.toString() !== req.user?._id.toString()) {
-        throw new ApiError(400, "only owner can delete thier tweet");
+    const tweet = await Tweet.findById(tweetId);
+    if (!tweet) {
+        throw new ApiError(404, "Tweet not found");
+    }
+
+    if (tweet?.owner?.toString() !== req.user?._id?.toString()) {
+        throw new ApiError(403, "Only the owner can delete their tweet");
     }
 
     await Tweet.findByIdAndDelete(tweetId);
@@ -174,6 +266,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
 export {
     createTweet,
     getUserTweets,
+    getAllTweets,
     updateTweet,
     deleteTweet
 }

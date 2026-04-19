@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
     deleteVideo,
     getAllVideos,
+    getRecommendedVideos,
     getVideoById,
     publishAVideo,
     togglePublishStatus,
@@ -26,10 +27,11 @@ router
                 name: "thumbnail",
                 maxCount: 1,
             },
-            
         ]),
         publishAVideo
     );
+
+router.route("/recommended").get(getRecommendedVideos);
 
 router
     .route("/:videoId")
@@ -39,4 +41,4 @@ router
 
 router.route("/toggle/publish/:videoId").patch(togglePublishStatus);
 
-export default router
+export default router;

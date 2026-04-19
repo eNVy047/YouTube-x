@@ -10,7 +10,8 @@ const asyncHandler = (requestHandler) => {
             const errorMessage = error.message || "Internal Server Error";
             res.status(statusCode).json({
                 success: false,
-                error: errorMessage
+                message: errorMessage,
+                errors: error?.errors ?? []
             });
         }
     };

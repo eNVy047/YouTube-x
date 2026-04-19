@@ -10,7 +10,11 @@ import {
     updateUserCoverImage, 
     getUserChannelProfile, 
     getWatchHistory, 
-    updateAccountDetails
+    updateAccountDetails,
+    forgotPassword,
+    resetPassword,
+    handleSocialAuth,
+    togglePremiumStatus
 } from "../controllers/user.controller.js";
 import {upload} from "../middlewares/multer.middleware.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -46,5 +50,10 @@ router.route("/cover-image").patch(verifyJWT, upload.single("coverImage"), updat
 
 router.route("/c/:username").get(verifyJWT, getUserChannelProfile)
 router.route("/history").get(verifyJWT, getWatchHistory)
+
+router.route("/forgot-password").post(forgotPassword)
+router.route("/reset-password").post(resetPassword)
+router.route("/social-auth").post(handleSocialAuth)
+router.route("/toggle-premium").post(verifyJWT, togglePremiumStatus)
 
 export default router

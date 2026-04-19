@@ -16,7 +16,7 @@ const userSchema = new Schema(
             type: String,
             required: true,
             unique: true,
-            lowecase: true,
+            lowercase: true,
             trim: true, 
         },
         fullName: {
@@ -32,6 +32,11 @@ const userSchema = new Schema(
         coverImage: {
             type: String, // cloudinary url
         },
+        description: {
+            type: String,
+            maxLength: 500,
+            default: ""
+        },
         watchHistory: [
             {
                 type: Schema.Types.ObjectId,
@@ -44,6 +49,16 @@ const userSchema = new Schema(
         },
         refreshToken: {
             type: String
+        },
+        forgotPasswordToken: {
+            type: String
+        },
+        forgotPasswordExpiry: {
+            type: Date
+        },
+        isPremium: {
+            type: Boolean,
+            default: false
         }
 
     },
@@ -60,7 +75,21 @@ userSchema.pre("save", async function (next) {
 })
 
 userSchema.methods.isPasswordCorrect = async function(password){
-    return await bcrypt.compare(password, this.password)
+    // Support legacy users whose password may have been stored in plaintext.
+    // If it matches, immediately upgrade it to a bcrypt hash.
+    const stored = this.password ?? ""
+    const looksHashed = typeof stored === "string" && stored.startsWith("$2")
+
+    if (!looksHashed) {
+        const matches = password === stored
+        if (matches) {
+            this.password = await bcrypt.hash(password, 10)
+            await this.save()
+        }
+        return matches
+    }
+
+    return await bcrypt.compare(password, stored)
 }
 
 userSchema.methods.generateAccessToken = function(){
